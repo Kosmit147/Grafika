@@ -1,5 +1,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/vec4.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <imgui.h>
 
 #include <array>
 #include <cassert>
@@ -86,11 +91,54 @@ auto run() -> std::expected<int, std::string> {
     std::println("OpenGL Renderer: {}", reinterpret_cast<const char*>(glGetString(GL_RENDERER)));
     std::println("OpenGL Version: {}", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
 
-    glClearColor(0.0f, 1.0f, 1.0f, 1.0f);
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    auto& imgui_io = ImGui::GetIO();
+    imgui_io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    imgui_io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    imgui_io.ConfigDpiScaleFonts = true;     // Automatically overwrite style.FontScaleDpi when monitor DPI changes.
+    imgui_io.ConfigDpiScaleViewports = true; // Scale ImGui and platform windows when monitor DPI changes.
+
+    auto monitor_scale = ImGui_ImplGlfw_GetContentScaleForWindow(window);
+    auto& imgui_style = ImGui::GetStyle();
+    imgui_style.ScaleAllSizes(monitor_scale);
+    imgui_style.FontScaleDpi = monitor_scale;
+
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init();
+    Defer shut_down_imgui{ [] {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplGlfw_Shutdown();
+        ImGui::DestroyContext();
+    }};
+
+    auto clear_color = glm::vec4{ 0.0f, 0.0f, 0.0f, 1.0f };
+    glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
 
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::Begin("Window");
+        ImGui::ColorEdit4("Clear Color", glm::value_ptr(clear_color));
+        ImGui::End();
+
+        glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        if (imgui_io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            glfwMakeContextCurrent(window);
+        }
+
         glfwSwapBuffers(window);
     }
 

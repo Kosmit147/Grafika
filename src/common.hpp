@@ -1,9 +1,12 @@
 #pragma once
 
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <utility>
 #include <functional>
+
+using byte = std::byte;
 
 using u8 = std::uint8_t;
 using i8 = std::int8_t;
