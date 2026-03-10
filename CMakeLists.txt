@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 4.1)
 
 project(Grafika)
 
+add_subdirectory(libs/glad SYSTEM)
+add_subdirectory(libs/glfw SYSTEM)
+
 add_executable(grafika)
 
 target_sources(
@@ -15,8 +18,10 @@ target_sources(
         BASE_DIRS
             src
         FILES
-            src/header.hpp
+            src/common.hpp
 )
 
 target_compile_features(grafika PRIVATE cxx_std_23)
 add_executable(Grafika::grafika ALIAS grafika)
+
+target_link_libraries(grafika PRIVATE glad::glad glfw)
